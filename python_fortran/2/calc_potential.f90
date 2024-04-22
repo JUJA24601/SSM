@@ -1,7 +1,7 @@
 subroutine calc_potential(triangles_data, sigmas, E0, x, y, z, num_of_triangles, div, potential3d)
     implicit none
     integer i, j, k, num_of_triangles, div
-    double precision triangles_data(num_of_triangles,3,3), eps0, pi, cord(3,3), side(3),&
+    double precision triangles_data(num_of_triangles,3,3), eps0, pi, coord(3,3), side(3),&
                     & a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3), E0(1,3), r(1,3), sigmas(num_of_triangles),&
                     & x(div), y(div), z(div), potential3d(div, div, div)
     intent(in) triangles_data, sigmas, E0, x, y, z, num_of_triangles, div
@@ -9,7 +9,7 @@ subroutine calc_potential(triangles_data, sigmas, E0, x, y, z, num_of_triangles,
 
     ! 三角形の型
     type Triangle
-        double precision cord(3,3), a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3)
+        double precision coord(3,3), a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3)
     end type Triangle
     type(Triangle) triangles(num_of_triangles)  ! 三角形の構造体を収める配列
 
@@ -21,15 +21,15 @@ subroutine calc_potential(triangles_data, sigmas, E0, x, y, z, num_of_triangles,
     
     ! 三角形の型を収める配列の初期化
     do i = 1, num_of_triangles
-        cord = triangles_data(i,:,:)
-        side = [distance(cord(1,:),cord(2,:)), distance(cord(2,:), cord(3,:)), distance(cord(3,:), cord(1,:))]
+        coord = triangles_data(i,:,:)
+        side = [distance(coord(1,:),coord(2,:)), distance(coord(2,:), coord(3,:)), distance(coord(3,:), coord(1,:))]
         a = MAXVAL(side)
         p0 = triangles_data(i, MAXLOC(side),:)
-        b = distance(cord(mod((MAXLOC(side)+1),3)+1,:), p0)
-        n1 = (cord(mod(MAXLOC(side),3)+1,:) - p0)/distance(cord(mod(MAXLOC(side),3)+1,:),p0)
-        n2 = (cord(mod((MAXLOC(side)+1),3)+1,:) - p0)/distance(cord(mod((MAXLOC(side)+1),3)+1,:),p0)
+        b = distance(coord(mod((MAXLOC(side)+1),3)+1,:), p0)
+        n1 = (coord(mod(MAXLOC(side),3)+1,:) - p0)/distance(coord(mod(MAXLOC(side),3)+1,:),p0)
+        n2 = (coord(mod((MAXLOC(side)+1),3)+1,:) - p0)/distance(coord(mod((MAXLOC(side)+1),3)+1,:),p0)
         n3 = cross_product(n1,n2)/sqrt(sum((cross_product(n1,n2))*(cross_product(n1,n2))))
-        triangles(i)%cord = cord
+        triangles(i)%coord = coord
         triangles(i)%a = a
         triangles(i)%b = b
         triangles(i)%p0 = p0
