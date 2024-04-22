@@ -1,4 +1,11 @@
+module TRIANGLE_mod
+    type :: Triangle
+        double precision coord(3,3), a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3)
+    end type Triangle
+end module TRIANGLE_mod
+
 program main
+    use TRIANGLE_mod
     implicit none
     integer number_of_triangles
     double precision apex1_x, apex1_y, apex1_z, apex2_x, apex2_y, apex2_z, apex3_x, apex3_y, apex3_z,&
@@ -14,6 +21,7 @@ program main
         a, b, p0_x, p0_y, p0_z, n1_x, n1_y, n1_z, n2_x, n2_y, n2_z, n3_x, n3_y, n3_z
         number_of_triangles = number_of_triangles + 1
     end do
+
 100 continue
     rewind(17)
     print *, "number_of_triangles =", number_of_triangles
