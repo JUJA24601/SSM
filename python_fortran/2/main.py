@@ -39,7 +39,7 @@ def main():
     # ここから物体表面の電荷を求める
     P = calc_matrix.calc_matrix(triangles, num_of_triangles)   # Pを計算
     
-    # 外部電位の影響を考慮する (ここもfortranで計算してもいいかも)
+    # 外部電場の影響を考慮する (ここもfortranで計算してもいいかも)
     for i in range(num_of_triangles):
         vector[i] = Vs[i] + np.dot(E0, incenter(triangles[i]))
     
