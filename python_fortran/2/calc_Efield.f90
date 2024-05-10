@@ -1,4 +1,4 @@
-subroutine calc_potential(triangles_data, sigmas, E0, x, y, z, num_of_triangles, div, potential3d)
+subroutine calc_Efield(triangles_data, sigmas, E0, x, y, z, num_of_triangles, div, potential3d)
     implicit none
     integer i, j, k, num_of_triangles, div
     double precision triangles_data(num_of_triangles,3,3), eps0, pi, coord(3,3), side(3),&
@@ -15,7 +15,7 @@ subroutine calc_potential(triangles_data, sigmas, E0, x, y, z, num_of_triangles,
 
     eps0 = 8.8541878128d-12     ! 誘電率
     pi = acos(-1.0d0)           ! 円周率
-    print *, "----- fortran (calc_potential) -----"
+    print *, "----- fortran (calc_Efield) -----"
     print *, "num_of_triangles : ", num_of_triangles
     print *, "E0 : ", E0
     
@@ -150,10 +150,10 @@ contains
     end function incenter
 
 
-    function p_calc(tri, r)
+    function field_elem(tri, r)
         ! 
         !
-        ! 電位係数を求める．(三角形がrに作る)
+        ! 電場を求める．(三角形がrに作る)
         !
         ! Parameters
         ! -----------
@@ -162,13 +162,14 @@ contains
         !
         ! Returns
         ! -----------
-        ! p_calc : 実数
-        !          電位係数
+        ! field : 電場
+        !        
         !
         !
         implicit none
-        double precision p_calc, r(1,3), a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3), x1, x2, x3,&
-                        & y1, y2, z, a1, a2, b1, b2, u1, u2, p(1,3), n1dotn2, N2prime(1,3), n2dotn2prime
+        double precision field_elem(1,3), r(1,3), a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3), x1, x2, x3,&
+                        & y1, y2, z, a1, a2, b1, b2, u1, u2, p(1,3), n1dotn2, N2prime(1,3), n2dotn2prime,&
+                        & z_sign, local_field(1,3)
         type(Triangle) tri
 
         ! 三角形の情報を抜き出す
@@ -242,7 +243,7 @@ contains
 
         p_calc = abs(p_calc)
         
-    end function p_calc
+    end function field_elem
 
     function p_calc_noZ(a2, b2, a1, b1, y)
         implicit none
@@ -530,4 +531,4 @@ contains
         cross_product(1,3) = a(1)*b(2) - a(2)*b(1)
     end function cross_product
 
-end subroutine calc_potential
+end subroutine calc_Efield

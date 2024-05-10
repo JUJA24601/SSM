@@ -2,7 +2,7 @@ subroutine calc_matrix(triangles_data, num_of_triangles, P)
     implicit none
     integer i, j, num_of_triangles
     double precision triangles_data(num_of_triangles,3,3), P(num_of_triangles,num_of_triangles), eps0, pi, coord(3,3), side(3),&
-                    & a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3), E0(1,3)
+                    & a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3), E0(1,3), eps1, eps2
     intent(in) triangles_data, num_of_triangles
     intent(out) P
 
@@ -13,6 +13,8 @@ subroutine calc_matrix(triangles_data, num_of_triangles, P)
     type(Triangle) triangles(num_of_triangles)  ! 三角形の構造体を収める配列
 
     eps0 = 8.8541878128d-12     ! 誘電率
+    eps1 = 5                    ! 内側
+    eps2 = 1                    ! 外側
     pi = acos(-1.0d0)           ! 円周率
     print *, "----- fortran (calc_matrix) -----"
     print *, "num_of_triangles : ", num_of_triangles
