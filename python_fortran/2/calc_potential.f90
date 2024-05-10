@@ -522,6 +522,12 @@ contains
         potential = potential - sum(E0*r)
     end function potential
 
+    function Ex_elem(a1, a2, b1, b2, u1, u2)
+        implicit none
+        double precision a1, a2, b1, b2, u1, u2, Ex_elem
+        Ex_elem = I3p(a2, b2, u1, u2) - I3p(a1, b1, u1, u2)
+    end function Ex_elem
+
     function cross_product(a,b)
         implicit none
         double precision a(3), b(3), cross_product(1,3)
