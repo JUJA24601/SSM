@@ -169,7 +169,7 @@ contains
         implicit none
         double precision field_elem(1,3), r(1,3), a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3), x1, x2, x3,&
                         & y1, y2, z, a1, a2, b1, b2, u1, u2, p(1,3), n1dotn2, N2prime(1,3), n2dotn2prime,&
-                        & z_sign, local_field(1,3)
+                        & z_sign, local_field(1,3), dist
         type(Triangle) tri
 
         ! 三角形の情報を抜き出す
@@ -180,6 +180,7 @@ contains
         n2 = tri%n2
         n3 = tri%n3
         
+        dist = center(tri%coord)
         p = p0 - r
 
         n1dotn2 = sum(n1*n2)
@@ -530,5 +531,10 @@ contains
         cross_product(1,2) = a(3)*b(1) - a(1)*b(3)
         cross_product(1,3) = a(1)*b(2) - a(2)*b(1)
     end function cross_product
+
+    function centroid(triangle)
+        implicit none
+        double precision triangle(3,3), centroid(3)
+    end function centroid
 
 end subroutine calc_Efield
