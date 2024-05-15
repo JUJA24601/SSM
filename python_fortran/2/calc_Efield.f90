@@ -573,8 +573,76 @@ contains
 
     function local_Ez(a1, a2, b1, b2, u1, u2)
         implicit none
-        double precision local_Ez, a1, a2, b1, b2, u1, u2
-        local_Ez = 0
+        double precision local_Ez, a1, a2, b1, b2, u1, u2, I1, I2
+        if (abs(b1) > 1.0d-14) then
+            I1 = I4(a1, b1, u1, u2);
+        else if (((u1<0.0d0) .and. (0.0d0<u2)) .or. ((u2<0.0d0) .and. (0.0d0<u1))) then
+            if (u1 <= 0.0d0) then
+                I1 = -(I7(a1, 0.0d0, abs(u1)) + I7(a1, 0.0d0, abs(u2)))
+            else
+                I1 = -(I7(a1, abs(u1), 0.0d0) + I7(a1, abs(u2), 0.0d0))
+            end if
+        else if (u1 <= 0.0d0) then
+            I1 = I7(a1, u1, u2);
+        else
+            I1 = I7(a1, u2, u1);
+        end if
+
+        if (abs(b2) > 1.0d-14) then
+            I2 = I4(a2, b2, u1, u2);
+        else if (((u1<0.0d0) .and. (0.0d0<u2)) .or. ((u2<0.0d0) .and. (0.0d0<u1))) then
+            if (u1 <= 0.0d0) then
+                I2 = -(I7(a2, 0.0d0, abs(u1)) + I7(a2, 0.0d0, abs(u2)))
+            else
+                I2 = -(I7(a2, abs(u1), 0.0d0) + I7(a2, abs(u2), 0.0d0))
+            end if
+        else if (u1 <= 0.0d0) then
+            I2 = I7(a2, u1, u2)
+        else
+            I2 = I7(a2, u2, u1)
+        end if
+
+        local_Ez = I2 - I1;
+
     end function local_Ez
+
+    function I3p(a, b, u1, u2)
+        implicit none
+        double precision I3p, a, b, u1, u2, g1, g2
+        g1 = (sqrt(b*b + 1.0d0) * sqrt(a*a + 2*a*b*u1 + (b*b + 1.0d0)*u1*u1 + 1.0d0) + b*(a + b*u1) + u1)
+        g2 = (sqrt(b*b + 1.0d0) * sqrt(a*a + 2*a*b*u2 + (b*b + 1.0d0)*u2*u2 + 1.0d0) + b*(a + b*u2) + u2)
+        if (g1 <= 0.0d0) then
+            g1 = -(1.0d0 + a*a + b*b)/(2.0d0*(b*b + 1)*u1)
+        end if
+        if (g2 <= 0.0d0) then
+            g2 = -(1.0d0 + a*a + b*b)/(2.0d0*(b*b + 1)*u2)
+        end if
+        I3p = 1.0d0/sqrt(b*b + 1.0d0)*log(abs(g2/g1))
+    end function I3p
+
+    function J2(a, u1, u2)
+        implicit none
+        double precision J2, a, u1, u2, g1, g2
+        if (a == 0.0d0) then
+            J2 = 0.0d0
+        else
+            g1 = sqrt(u1*u1 + a*a + 1.0d0)
+            g2 = sqrt(u2*u2 + a*a + 1.0d0)
+            J2 = a/(2.0d0*abs(a))*log(((g2 - abs(a))*(g1 + abs(a)))/((g2 + abs(a))*(g1 - abs(a))))
+        end if
+    end function J2
+
+    function I4_2_plus(alpha, gamma, prefac, t1, t2)
+        implicit none
+        double precision I4_2_plus, alpha, gamma, prefac, t1, t2, g1, g2, q
+        g1 = sqrt(alpha * t1 * t1 + gamma)
+        g2 = sqrt(alpha * t2 * t2 + gamma)
+        if (gamma - alpha <= 0) then
+            I4_2_plus = prefac*(g2 - g1)/((alpha - gamma) + g1*g2)
+        else
+            q = sqrt(gamma - alpha);
+            I4_2_plus = prefac*1.0d0/q*atanh(q * (g2 - g1) / ((alpha - gamma) + g1 * g2))
+        end if
+    end function I4_2_plus
 
 end subroutine calc_Efield
