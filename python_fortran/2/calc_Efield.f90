@@ -38,44 +38,44 @@ subroutine calc_Efield(triangles_data, sigmas, E0, x, y, z, num_of_triangles, di
         triangles(i)%n3 = n3
     end do
 
-    ! ここから空間の電位を求める
-    do i = 1,div
-        ! print *, i
-        do j = 1,div
-            do k = 1,div
-                r(1,1) = x(i); r(1,2) = y(j); r(1,3) = z(k) 
-                potential3d(i,j,k) = potential(r, triangles, sigmas)
-            end do
-        end do
-    end do
+    ! ! ここから空間の電位を求める
+    ! do i = 1,div
+    !     ! print *, i
+    !     do j = 1,div
+    !         do k = 1,div
+    !             r(1,1) = x(i); r(1,2) = y(j); r(1,3) = z(k) 
+    !             potential3d(i,j,k) = potential(r, triangles, sigmas)
+    !         end do
+    !     end do
+    ! end do
     
 contains
 
-    function potential_elem(tri, r, sigma)
-        !
-        !
-        ! 三角形要素triangleによってできる任意の点rでの電位を求める．
-        ! 
-        ! Parameters
-        ! ---------
-        ! tri      : [3,3]の実数配列でそれぞれの行に頂点が保存される．
-        !            三角形の座標
-        ! r        : [1,3]の実数配列
-        !            任意の点
-        ! sigma    : 実数
-        !            三角形の電荷密度
-        !
-        ! Returns
-        ! ---------
-        ! potential_elem : 実数
-        !                  三角形要素によって点rで生じる電位
-        ! 
-        !
-        implicit none
-        double precision potential_elem, r(1,3), sigma
-        type(Triangle) tri
-        potential_elem = (p_calc(tri, r)*sigma)/(4.0d0*pi*eps0)
-    end function potential_elem
+    ! function potential_elem(tri, r, sigma)
+    !     !
+    !     !
+    !     ! 三角形要素triangleによってできる任意の点rでの電位を求める．
+    !     ! 
+    !     ! Parameters
+    !     ! ---------
+    !     ! tri      : [3,3]の実数配列でそれぞれの行に頂点が保存される．
+    !     !            三角形の座標
+    !     ! r        : [1,3]の実数配列
+    !     !            任意の点
+    !     ! sigma    : 実数
+    !     !            三角形の電荷密度
+    !     !
+    !     ! Returns
+    !     ! ---------
+    !     ! potential_elem : 実数
+    !     !                  三角形要素によって点rで生じる電位
+    !     ! 
+    !     !
+    !     implicit none
+    !     double precision potential_elem, r(1,3), sigma
+    !     type(Triangle) tri
+    !     potential_elem = (p_calc(tri, r)*sigma)/(4.0d0*pi*eps0)
+    ! end function potential_elem
 
 
     function distance(a, b)     ! OK
@@ -169,7 +169,7 @@ contains
         implicit none
         double precision field_elem(1,3), r(1,3), a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3), x1, x2, x3,&
                         & y1, y2, z, a1, a2, b1, b2, u1, u2, p(1,3), n1dotn2, N2prime(1,3), n2dotn2prime,&
-                        & z_sign, local_field(1,3), dist
+                        & z_sign, local_field(1,3), dist, prefac
         type(Triangle) tri
 
         ! 三角形の情報を抜き出す
@@ -180,7 +180,7 @@ contains
         n2 = tri%n2
         n3 = tri%n3
         
-        dist = center(tri%coord)
+        dist = distance(centroid(tri%coord), r)
         p = p0 - r
 
         n1dotn2 = sum(n1*n2)
@@ -197,8 +197,10 @@ contains
         if (z < 0.0d0) then
             y1 = -y1
             y2 = y1 - b * n2dotn2prime
+            z_sign = -1
         else
             y2 = y1 + b * n2dotn2prime
+            z_sign = 1
         end if
 
         z = abs(z)
@@ -230,19 +232,25 @@ contains
         b1 = (x3 - x1) / (y2 - y1)
         b2 = (x3 - x2) / (y2 - y1)
 
+        prefac = 1/(4*pi*eps0)
+
         if (z > 1.0d-14) then
-            if (abs(b1) < 1.0d-13) then
-                p_calc = z * (I1(a2, b2, u1, u2) - I2(a1, u1, u2))
-            else if (abs(b2) < 1.0d-13) then
-                p_calc = z * (I2(a2, u1, u2) - I1(a1, b1, u1, u2))
-            else
-                p_calc = z * (I1(a2, b2, u1, u2) - I1(a1, b1, u1, u2))
-            end if
+            local_field(1,1) = z_sign * prefac * local_Ex(a1, a2, b1, b2, u1, u2)
+            local_field(1,2) = prefac * local_Ey(a1, a2, b1, b2, u1, u2)
+            local_field(1,3) = prefac * local_Ez(a1, a2, b1, b2, u1, u2)
         else
-            p_calc = (p_calc_noZ(a2, b2, a1, b1, u2) - p_calc_noZ(a2, b2, a1, b1, u1))
+            local_field(1,1) = z_sign * prefac * local_Ex(a1, a2, b1, b2, u1, u2)
+            local_field(1,2) = prefac * local_Ey(a1, a2, b1, b2, u1, u2)
+            if (dist < 1.0d-12) then
+                local_field(1,3) = 1/(2*eps0)
+            else
+                local_field(1,3) = 0
+            end if
         end if
 
-        p_calc = abs(p_calc)
+        do i = 1, 3
+            field_elem(1,i) = n1(1,j)*local_field(1,1) + N2prime(1,j)*local_field(1,2) + n3(1,j)*local_field(1,3)
+        end do
         
     end function field_elem
 
@@ -491,38 +499,38 @@ contains
                 & (distance(a,b)+distance(b,c)+distance(c,a))
     end function p_calc_o
 
-    function potential(r, tris, sigmas)
-        !
-        !
-        ! 位置rでの電位を計算する．
-        ! 
-        ! Parameters
-        ! -------------
-        ! r         : [1,3]の実数配列
-        !             rの座標
-        ! tris      : 三角形の構造体を収めた配列
-        !       `     三角形の座標
-        ! sigmas    : [n,1]の実数配列．nは三角形の個数．
-        !             それぞれの三角形の電荷密度
-        ! 
-        ! Returns
-        ! -------------
-        ! potential : 実数
-        !             rでの電位
-        !
-        !
-        implicit none
-        double precision potential, r(1,3), sigmas(:)
-        integer i ! , n
-        type(Triangle) tris(:), tri
-        ! n = ubound(tris, 1)
-        potential = 0.0d0
-        do i = 1, num_of_triangles
-            tri = tris(i)
-            potential = potential + potential_elem(tri,r,sigmas(i))
-        end do
-        potential = potential - sum(E0*r)
-    end function potential
+    ! function potential(r, tris, sigmas)
+    !     !
+    !     !
+    !     ! 位置rでの電位を計算する．
+    !     ! 
+    !     ! Parameters
+    !     ! -------------
+    !     ! r         : [1,3]の実数配列
+    !     !             rの座標
+    !     ! tris      : 三角形の構造体を収めた配列
+    !     !       `     三角形の座標
+    !     ! sigmas    : [n,1]の実数配列．nは三角形の個数．
+    !     !             それぞれの三角形の電荷密度
+    !     ! 
+    !     ! Returns
+    !     ! -------------
+    !     ! potential : 実数
+    !     !             rでの電位
+    !     !
+    !     !
+    !     implicit none
+    !     double precision potential, r(1,3), sigmas(:)
+    !     integer i ! , n
+    !     type(Triangle) tris(:), tri
+    !     ! n = ubound(tris, 1)
+    !     potential = 0.0d0
+    !     do i = 1, num_of_triangles
+    !         tri = tris(i)
+    !         potential = potential + potential_elem(tri,r,sigmas(i))
+    !     end do
+    !     potential = potential - sum(E0*r)
+    ! end function potential
 
     function cross_product(a,b)
         implicit none
@@ -536,5 +544,23 @@ contains
         implicit none
         double precision triangle(3,3), centroid(3)
     end function centroid
+
+    function local_Ex(a1, a2, b1, b2, u1, u2)
+        implicit none
+        double precision local_Ex, a1, a2, b1, b2, u1, u2
+        local_Ex = 0
+    end function local_Ex
+
+    function local_Ey(a1, a2, b1, b2, u1, u2)
+        implicit none
+        double precision local_Ey, a1, a2, b1, b2, u1, u2
+        local_Ey = 0
+    end function local_Ey
+
+    function local_Ez(a1, a2, b1, b2, u1, u2)
+        implicit none
+        double precision local_Ez, a1, a2, b1, b2, u1, u2
+        local_Ez = 0
+    end function local_Ez
 
 end subroutine calc_Efield
