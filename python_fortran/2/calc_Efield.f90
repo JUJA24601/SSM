@@ -543,18 +543,32 @@ contains
     function centroid(triangle)
         implicit none
         double precision triangle(3,3), centroid(3)
+        centroid = [0,0,0]
     end function centroid
 
     function local_Ex(a1, a2, b1, b2, u1, u2)
         implicit none
         double precision local_Ex, a1, a2, b1, b2, u1, u2
-        local_Ex = 0
+        local_Ex = I3p(a2, b2, u1, u2) - I3p(a1, b1, u1, u2)
     end function local_Ex
 
     function local_Ey(a1, a2, b1, b2, u1, u2)
         implicit none
-        double precision local_Ey, a1, a2, b1, b2, u1, u2
-        local_Ey = 0
+        double precision local_Ey, a1, a2, b1, b2, u1, u2, I1, I2
+        if (abs(b2) > 1.0d-14) then
+            I2 = I4_2(a2, b2, u1, u2) - b2*I3p(a2, b2, u1, u2)
+        else
+            I2 = J2(a2, u1, u2)
+        end if
+
+        if (abs(b1) > 1.0d-14) then
+            I1 = I4_2(a1, b1, u1, u2) - b1*I3p(a1, b1, u1, u2)
+        else
+            I1 = J2(a1, u1, u2)
+        end if
+
+        local_Ey = I1- I2
+        
     end function local_Ey
 
     function local_Ez(a1, a2, b1, b2, u1, u2)
