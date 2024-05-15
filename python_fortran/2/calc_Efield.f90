@@ -637,12 +637,17 @@ contains
         double precision I4_2_plus, alpha, gamma, prefac, t1, t2, g1, g2, q
         g1 = sqrt(alpha * t1 * t1 + gamma)
         g2 = sqrt(alpha * t2 * t2 + gamma)
-        if (gamma - alpha <= 0) then
+        if (gamma - alpha <= 0.0d0) then
             I4_2_plus = prefac*(g2 - g1)/((alpha - gamma) + g1*g2)
         else
             q = sqrt(gamma - alpha);
-            I4_2_plus = prefac*1.0d0/q*atanh(q * (g2 - g1) / ((alpha - gamma) + g1 * g2))
+            I4_2_plus = prefac*1.0d0/q*atanh(q*(g2 - g1)/((alpha - gamma) + g1*g2))
         end if
     end function I4_2_plus
+
+    recursive function I4_2(a, b, u1, u2) result(ans)
+        implicit none
+        double precision I4, a, b, u1, u2, alpha, gamma, lambda, prefac, t1, t2
+    end function I4_2
 
 end subroutine calc_Efield
