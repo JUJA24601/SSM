@@ -648,6 +648,30 @@ contains
     recursive function I4_2(a, b, u1, u2) result(ans)
         implicit none
         double precision I4, a, b, u1, u2, alpha, gamma, lambda, prefac, t1, t2
+        alpha = 1.0d0 + (a*a)/(b*b)
+        gamma = (a*a + b*b)*(a*a + b*b + 1)/(b*b)
+        lambda = -a/b
+        prefac = (a*a/b + b)
+        if (b * u1 /= -a) then 
+            t1 = (b - a*u1) / (a + b*u1)
+        else
+            t1 = 1.0d15
+        end if
+
+        if (((u1 > lambda) - (u1 < lambda)) != ((u2 > lambda) - (u2 < lambda))) {
+        if (u1 > lambda)
+            return (I4_2(alpha, gamma, prefac, fabs(t1), 1.e15) + I4_2(alpha, gamma, prefac, fabs(t2), 1.e15));
+        else
+            return (I4_2(alpha, gamma, prefac, 1.e15, fabs(t1)) + I4_2(alpha, gamma, prefac, 1.e15, fabs(t2)));
+        }
+        else if (u1 > lambda)
+            return I4_2(alpha, gamma, prefac, t1, t2);
+        else
+            return I4_2(alpha, gamma, prefac, t2, t1);
+
+
+
+        ans = 0
     end function I4_2
 
 end subroutine calc_Efield
