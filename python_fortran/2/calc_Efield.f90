@@ -38,7 +38,7 @@ subroutine calc_Efield(triangles_data, sigmas, E0, x, y, z, num_of_triangles, di
         triangles(i)%n3 = n3
     end do
 
-    ! ! ここから空間の電位を求める
+    ! ! ここから電場を求める
     ! do i = 1,div
     !     ! print *, i
     !     do j = 1,div
@@ -148,6 +148,14 @@ contains
         ab = distance(a,b); bc = distance(b,c); ca = distance(c,a)
         incenter = (bc*a+ca*b+ab*c)/(ab+bc+ca)
     end function incenter
+
+    function field(triangles, r, sigmas)
+        implicit none
+        double precision triangles(num_of_triangles), r(3), sigmas(num_of_triangles), field, num_of_triangles
+        do i = 1, num_of_triangles
+            field = field_elem(triangles(i), r, sigmas())
+        end do
+    end function field
 
 
     function field_elem(tri, r)
