@@ -153,12 +153,12 @@ contains
         implicit none
         double precision triangles(num_of_triangles), r(3), sigmas(num_of_triangles), field, num_of_triangles
         do i = 1, num_of_triangles
-            field = field_elem(triangles(i), r, sigmas())
+            field = field_elem(triangles(i), r, sigmas(i))
         end do
     end function field
 
 
-    function field_elem(tri, r)
+    function field_elem(tri, r, sigma)
         ! 
         !
         ! 電場を求める．(三角形がrに作る)
@@ -259,6 +259,8 @@ contains
         do i = 1, 3
             field_elem(1,i) = n1(1,j)*local_field(1,1) + N2prime(1,j)*local_field(1,2) + n3(1,j)*local_field(1,3)
         end do
+
+        field_elem = sigma*field_elem
         
     end function field_elem
 
