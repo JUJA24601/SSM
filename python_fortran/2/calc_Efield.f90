@@ -1,11 +1,11 @@
-subroutine calc_Efield(triangles_data, sigmas, E0, x, y, z, num_of_triangles, div, potential3d)
+subroutine calc_efield(triangles_data, sigmas, E0, num_of_triangles, pi)
     implicit none
-    integer i, j, k, num_of_triangles, div
+    integer i, j, k, num_of_triangles
     double precision triangles_data(num_of_triangles,3,3), eps0, pi, coord(3,3), side(3),&
                     & a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3), E0(1,3), r(1,3), sigmas(num_of_triangles),&
-                    & x(div), y(div), z(div), potential3d(div, div, div)
-    intent(in) triangles_data, sigmas, E0, x, y, z, num_of_triangles, div
-    intent(out) potential3d
+                    & f(1,3)
+    intent(in) triangles_data, sigmas, E0, num_of_triangles
+    intent(out) pi
 
     ! 三角形の型
     type Triangle
@@ -38,13 +38,21 @@ subroutine calc_Efield(triangles_data, sigmas, E0, x, y, z, num_of_triangles, di
         triangles(i)%n3 = n3
     end do
 
-    ! ! ここから電場を求める
-    ! do i = 1,div
-    !     ! print *, i
-    !     do j = 1,div
-    !         do k = 1,div
-    !             r(1,1) = x(i); r(1,2) = y(j); r(1,3) = z(k) 
-    !             potential3d(i,j,k) = potential(r, triangles, sigmas)
+
+    ! ここから電場を求める
+    ! do i = 1, 1
+    !     do j = 1, 1
+    !         do k = 1, 1
+    !             ! r(1,:) = centroid(triangles(1)%coord)
+    !             ! r(1,3) = 10.0d0
+    !             ! ! print *, r
+    !             ! f = field_elem(triangles(1), r, 1.0d-8)       ! 外部電場がある場合にはここに外部電場を追加(今後)
+    !             ! print *, "f : ", f
+
+    !             ! r(1,:) = [sqrt(10.0d0), 0.0d0, 0.0d0]
+    !             r(1,:) = [0.0d0, 0.0d0, 0.0d0]
+    !             f = field(triangles, r, sigmas, num_of_triangles)       ! 外部電場がある場合にはここに外部電場を追加(今後)
+    !             print *, "f : ", f
     !         end do
     !     end do
     ! end do
@@ -149,11 +157,14 @@ contains
         incenter = (bc*a+ca*b+ab*c)/(ab+bc+ca)
     end function incenter
 
-    function field(triangles, r, sigmas)
+    function field(triangles, r, sigmas, num_of_triangles)
         implicit none
-        double precision triangles(num_of_triangles), r(3), sigmas(num_of_triangles), field, num_of_triangles
+        integer num_of_triangles, i
+        double precision r(3), sigmas(num_of_triangles), field(1,3)
+        type(Triangle) triangles(num_of_triangles)
+        field(1,:) = [0.0d0, 0.0d0, 0.0d0]
         do i = 1, num_of_triangles
-            field = field_elem(triangles(i), r, sigmas(i))
+            field = field + field_elem(triangles(i), r, sigmas(i))
         end do
     end function field
 
@@ -177,7 +188,7 @@ contains
         implicit none
         double precision field_elem(1,3), r(1,3), a, b, p0(1,3), n1(1,3), n2(1,3), n3(1,3), x1, x2, x3,&
                         & y1, y2, z, a1, a2, b1, b2, u1, u2, p(1,3), n1dotn2, N2prime(1,3), n2dotn2prime,&
-                        & z_sign, local_field(1,3), dist, prefac
+                        & z_sign, local_field(1,3), dist, prefac, sigma
         type(Triangle) tri
 
         ! 三角形の情報を抜き出す
@@ -240,7 +251,7 @@ contains
         b1 = (x3 - x1) / (y2 - y1)
         b2 = (x3 - x2) / (y2 - y1)
 
-        prefac = 1/(4*pi*eps0)
+        prefac = 1.0d0/(4*pi*eps0)
 
         if (z > 1.0d-14) then
             local_field(1,1) = z_sign * prefac * local_Ex(a1, a2, b1, b2, u1, u2)
@@ -250,14 +261,14 @@ contains
             local_field(1,1) = z_sign * prefac * local_Ex(a1, a2, b1, b2, u1, u2)
             local_field(1,2) = prefac * local_Ey(a1, a2, b1, b2, u1, u2)
             if (dist < 1.0d-12) then
-                local_field(1,3) = 1/(2*eps0)
+                local_field(1,3) = 1.0d0/(2.0d0*eps0)
             else
-                local_field(1,3) = 0
+                local_field(1,3) = 0.0d0
             end if
         end if
 
         do i = 1, 3
-            field_elem(1,i) = n1(1,i)*local_field(1,1) + N2prime(1,2)*local_field(1,2) + n3(1,3)*local_field(1,3)
+            field_elem(1,i) = n1(1,i)*local_field(1,1) + N2prime(1,i)*local_field(1,2) + n3(1,i)*local_field(1,3)
         end do
 
         field_elem = sigma*field_elem
@@ -566,13 +577,13 @@ contains
         implicit none
         double precision local_Ey, a1, a2, b1, b2, u1, u2, I1, I2
         if (abs(b2) > 1.0d-14) then
-            I2 = I4_2(a2, b2, u1, u2) - b2*I3p(a2, b2, u1, u2)
+            I2 = I4_2(a2, b2, u1, u2) + b2*I3p(a2, b2, u1, u2)
         else
             I2 = J2(a2, u1, u2)
         end if
 
         if (abs(b1) > 1.0d-14) then
-            I1 = I4_2(a1, b1, u1, u2) - b1*I3p(a1, b1, u1, u2)
+            I1 = I4_2(a1, b1, u1, u2) + b1*I3p(a1, b1, u1, u2)
         else
             I1 = J2(a1, u1, u2)
         end if
@@ -619,13 +630,13 @@ contains
     function I3p(a, b, u1, u2)
         implicit none
         double precision I3p, a, b, u1, u2, g1, g2
-        g1 = (sqrt(b*b + 1.0d0) * sqrt(a*a + 2*a*b*u1 + (b*b + 1.0d0)*u1*u1 + 1.0d0) + b*(a + b*u1) + u1)
-        g2 = (sqrt(b*b + 1.0d0) * sqrt(a*a + 2*a*b*u2 + (b*b + 1.0d0)*u2*u2 + 1.0d0) + b*(a + b*u2) + u2)
+        g1 = (sqrt(b*b + 1.0d0) * sqrt(a*a + 2.0d0*a*b*u1 + (b*b + 1.0d0)*u1*u1 + 1.0d0) + b*(a + b*u1) + u1)
+        g2 = (sqrt(b*b + 1.0d0) * sqrt(a*a + 2.0d0*a*b*u2 + (b*b + 1.0d0)*u2*u2 + 1.0d0) + b*(a + b*u2) + u2)
         if (g1 <= 0.0d0) then
-            g1 = -(1.0d0 + a*a + b*b)/(2.0d0*(b*b + 1)*u1)
+            g1 = -(1.0d0 + a*a + b*b)/(2.0d0*(b*b + 1.0d0)*u1)
         end if
         if (g2 <= 0.0d0) then
-            g2 = -(1.0d0 + a*a + b*b)/(2.0d0*(b*b + 1)*u2)
+            g2 = -(1.0d0 + a*a + b*b)/(2.0d0*(b*b + 1.0d0)*u2)
         end if
         I3p = 1.0d0/sqrt(b*b + 1.0d0)*log(abs(g2/g1))
     end function I3p
@@ -650,7 +661,7 @@ contains
         if (gamma - alpha <= 0.0d0) then
             I4_2_plus = prefac*(g2 - g1)/((alpha - gamma) + g1*g2)
         else
-            q = sqrt(gamma - alpha);
+            q = sqrt(gamma - alpha)
             I4_2_plus = prefac*1.0d0/q*atanh(q*(g2 - g1)/((alpha - gamma) + g1*g2))
         end if
     end function I4_2_plus
@@ -659,13 +670,19 @@ contains
         implicit none
         double precision  a, b, u1, u2, alpha, gamma, lambda, prefac, t1, t2, ans
         alpha = 1.0d0 + (a*a)/(b*b)
-        gamma = (a*a + b*b)*(a*a + b*b + 1)/(b*b)
+        gamma = (a*a + b*b)*(a*a + b*b + 1.0d0)/(b*b)
         lambda = -a/b
         prefac = (a*a/b + b)
         if (b * u1 /= -a) then 
             t1 = (b - a*u1) / (a + b*u1)
         else
             t1 = 1.0d15
+        end if
+
+        if (b * u2 /= -a) then 
+            t2 = (b - a*u2) / (a + b*u2)
+        else
+            t2 = 1.0d15
         end if
 
         if (((u1<lambda) .and. (lambda<u2)) .or. ((u2<lambda) .and. (lambda<u1))) then
@@ -684,4 +701,4 @@ contains
         end if
     end function I4_2
 
-end subroutine calc_Efield
+end subroutine calc_efield
