@@ -257,7 +257,7 @@ contains
         end if
 
         do i = 1, 3
-            field_elem(1,i) = n1(1,j)*local_field(1,1) + N2prime(1,j)*local_field(1,2) + n3(1,j)*local_field(1,3)
+            field_elem(1,i) = n1(1,i)*local_field(1,1) + N2prime(1,2)*local_field(1,2) + n3(1,3)*local_field(1,3)
         end do
 
         field_elem = sigma*field_elem
