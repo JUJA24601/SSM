@@ -15,8 +15,8 @@ program main
         double precision coord(3,3), a, b, p0(3), n1(3), n2(3), n3(3)
     end type Triangle
 
-    ! type(Rectangle), allocatable :: rectangles(:)
-    type(Triangle), allocatable :: triangles(:)
+    type(Rectangle), allocatable :: rectangles(:)
+    type(Rectangle), allocatable :: triangles(:)
     double precision, allocatable :: P(:,:)
     double precision, allocatable :: ipiv(:)
     double precision, allocatable :: sigmas(:)
@@ -60,7 +60,7 @@ program main
     ! close (17)
     
     ! ------------ Triangles ------------
-    open (17, file="data_triangle.csv", status="old")
+    open (17, file="test_data_triangle.csv", status="old")
     num_of_triangles = 0
     read (17, "()")
     do
@@ -98,21 +98,16 @@ program main
     !     end do
     ! end do
 
-    print *, p_calc_o(triangles(1))
-    print *, p_calc_tri(triangles(1), centroid_triangle(triangles(1)))
-
     ! ------------ Triangle ------------
     do i = 1, num_of_triangles
         do j = 1, num_of_triangles
             if (i/=j) then
                 P(j,i) = p_calc_tri(triangles(i), centroid_triangle(triangles(j)))
             else
-                P(j,i) = p_calc_o(triangles(i))
+                P(j,i) = p_calc_o(triangle(i)%coord)
             end if
         end do
     end do
-
-    ! print *, "P : ", P
 
     ! RHS ------------ Rectangle ------------
     ! do i = 1, num_of_rectangles
@@ -121,7 +116,7 @@ program main
 
     ! ------------ Triangle ------------
     do i = 1, num_of_triangles
-        sigmas(i) = potential_conductor - sum(E0*centroid_triangle(triangles(i)))
+        sigmas(i) = potential_conductor - sum(E0*centroid_triangle(triangles(j)))
     end do
 
     ! solve linear system ------------ Rectangle ------------
@@ -132,7 +127,7 @@ program main
     ! ------------ Triangle ------------
     call dgesv(num_of_triangles, 1, P, num_of_triangles, ipiv, sigmas, num_of_triangles, info)
     sigmas = 4*pi*eps0*sigmas
-    ! print *, "sigmas : ", sigmas
+    print *, "sigmas : ", sigmas(1)
 
     ! calculate total charge ------------ Rectangle ------------
     ! Q = 0
@@ -175,7 +170,7 @@ contains
         centroid = p0 + 0.5*(a*n1 + b*n2)
     end function
 
-    function centroid_triangle(tri) result(centroid)
+    function centroid_triangle(triangle) result(centroid)
         !
         !
         ! 三角形の内心を求める．
@@ -192,10 +187,10 @@ contains
         !
         !
         implicit none
-        type(Triangle), intent(in) :: tri
-        double precision tri_coord(3,3), centroid(3), a(3), b(3), c(3), ab, bc, ca
-        tri_coord = tri%coord
-        a = tri_coord(1,:); b = tri_coord(2,:); c = tri_coord(3,:)
+        type(Triangle), intent(in) :: triangle
+        double precision triangle_coord(3,3), centroid(3), a(3), b(3), c(3), ab, bc, ca
+        triangle_coord = triangle%coord
+        a = triangle_coord(1,:); b = triangle_coord(2,:); c = triangle_coord(3,:)
         ab = distance(a,b); bc = distance(b,c); ca = distance(c,a)
         centroid = (bc*a+ca*b+ab*c)/(ab+bc+ca)
     end function
@@ -261,17 +256,17 @@ contains
         r  = sqrt(abs(x*x + y*y + w*w))
         r0 = sqrt(abs(y*y + w*w))
         xa = abs(x)
-        if (xa < 1.0d-20) then
+        if (xa < 1.0d-10) then
             c1 = 0.0d0
         else
-            c1 = xa*log(abs(y + r) + 1.0d-22)
+            c1 = xa*log(abs(y + r) + 1.0d-12)
         end if
-        if (abs(y) < 1.0d-22) then
+        if (abs(y) < 1.0d-12) then
             c2 = 0.0d0
         else
-            c2 = y*log(abs((xa + r)/r0) + 1.0d-22)
+            c2 = y*log(abs((xa + r)/r0) + 1.0d-12)
         end if
-        if (abs(w) < 1.0d-22) then
+        if (abs(w) < 1.0d-12) then
             c3 = 0.0d0
         else
             c3 = w*(atan(xa/w) + atan(y*w/(x*x + w*w + xa*r)) - atan(y/w))
@@ -299,7 +294,7 @@ contains
         !
         !
         implicit none
-        double precision r(3), a, b, p0(3), n1(3), n2(3), n3(3), x1, x2, x3, ans,&
+        double precision r(3), a, b, p0(3), n1(3), n2(3), n3(3), x1, x2, x3,&
                         & y1, y2, z, a1, a2, b1, b2, u1, u2, p(3), n1dotn2, N2prime(3), n2dotn2prime
         type(Triangle) tri
 
@@ -333,25 +328,25 @@ contains
 
         z = abs(z)
 
-        if (z > 1.0d-24) then
+        if (z > 1.0d-14) then
             u1 = y1 / z
             if (u1 == 0.0d0) then
-                u1 = 1.0d-28
+                u1 = 1.0d-18
             end if
             u2 = y2 / z
             if (u2 == 0.0d0) then
-                u2 = 1.0d-28
+                u2 = 1.0d-18
             end if
             a1 = (x1 * y2 - x3 * y1) / (z * (y2 - y1))
             a2 = (x2 * y2 - x3 * y1) / (z * (y2 - y1))
         else
             u1 = y1
             if (u1 == 0.0d0) then
-                u1 = 1.0d-28
+                u1 = 1.0d-18
             end if
             u2 = y2
             if (u2 == 0.0d0) then
-                u2 = 1.0d-28
+                u2 = 1.0d-18
             end if
             a1 = (x1 * y2 - x3 * y1) / (y2 - y1)
             a2 = (x2 * y2 - x3 * y1) / (y2 - y1)
@@ -360,10 +355,10 @@ contains
         b1 = (x3 - x1) / (y2 - y1)
         b2 = (x3 - x2) / (y2 - y1)
 
-        if (z > 1.0d-24) then
-            if (abs(b1) < 1.0d-23) then
+        if (z > 1.0d-14) then
+            if (abs(b1) < 1.0d-13) then
                 ans = z * (I1(a2, b2, u1, u2) - I2(a1, u1, u2))
-            else if (abs(b2) < 1.0d-23) then
+            else if (abs(b2) < 1.0d-13) then
                 ans = z * (I2(a2, u1, u2) - I1(a1, b1, u1, u2))
             else
                 ans = z * (I1(a2, b2, u1, u2) - I1(a1, b1, u1, u2))
@@ -378,32 +373,32 @@ contains
 
     function p_calc_noZ(a2, b2, a1, b1, y) result(ans)
         implicit none
-        double precision a1, a2, b1, b2, y, logArg1, logArg2, ans1, ans2, ans
-        logArg2 = (1.0d0 + b2*b2)*y + a2*b2 + sqrt(1.0d0 + b2*b2)*sqrt((1.0d0 + b2*b2)*y*y + 2*a2*b2*y + a2*a2)
-        logArg1 = (1.0d0 + b1*b1)*y + a1*b1 + sqrt(1.0d0 + b1*b1)*sqrt((1.0d0 + b1*b1)*y*y + 2*a1*b1*y + a1*a1)
+        double precision a1, a2, b1, b2, y, logArg1, logArg2, ans1, ans2
+        logArg2 = (1.0d0 + b2*b2)*y + a2*b2 + sqrt((1.0d0 + b2*b2)*y*y + 2*a2*b2*y + a2*a2)
+        logArg1 = (1.0d0 + b1*b1)*y + a1*b1 + sqrt((1.0d0 + b1*b1)*y*y + 2*a1*b1*y + a1*a1)
         
-        if (logArg2 > 1.0d-24) then
-            if (abs(y) > 1.0d-24) then
+        if (logArg2 > 1.0d-14) then
+            if (abs(y) > 1.0d-14) then
                 ans2 = y * asinh((a2 + b2 * y) / abs(y)) + a2 / sqrt(1.0d0 + b2 * b2) * log(logArg2)
             else
                 ans2 = a2 / sqrt(1.0d0 + b2 * b2) * log(logArg2)
             end if
         else
-            if (abs(y) > 1.0d-24) then
+            if (abs(y) > 1.0d-14) then
                 ans2 = y * asinh(y * b2 / abs(y))
             else
                 ans2 = 0.0d0
             end if
         end if
 
-        if (logArg1 > 1.0d-24) then
-            if (abs(y) > 5.0d-24) then
+        if (logArg1 > 1.0d-14) then
+            if (abs(y) > 5.0d-14) then
                 ans1 = y * asinh((a1 + b1 * y) / abs(y)) + a1 / sqrt(1.0d0 + b1 * b1) * log(logArg1)
             else
                 ans1 = a1 / sqrt(1.0d0 + b1 * b1) * log(logArg1)
             end if
         else
-            if (abs(y) > 5.0d-24) then
+            if (abs(y) > 5.0d-14) then
                 ans1 = y * asinh(y * b1 / abs(y))
             else
                 ans1 = 0.0d0
@@ -416,13 +411,13 @@ contains
 
     function F1(a, b, u) result(ans)
         implicit none
-        double precision a, b, u, ans
+        double precision a, b, u
         ans = u*asinh((a + b * u) / sqrt(u * u + 1.0d0))
     end function
 
     function I3(a, b, u1, u2) result(ans)
         implicit none
-        double precision a, b, u1, u2, g1, g2, ans
+        double precision a, b, u1, u2, g1, g2
         g1 = (sqrt(b * b + 1.0d0) * sqrt(a*a + 2.0d0*a*b*u1 + (b*b + 1.0d0)*u1*u1 + 1.0d0) + b*(a + b*u1) + u1)
         g2 = (sqrt(b * b + 1.0d0) * sqrt(a*a + 2.0d0*a*b*u2 + (b*b + 1.0d0)*u2*u2 + 1.0d0) + b*(a + b*u2) + u2)
 
@@ -433,14 +428,14 @@ contains
             g2 = -(1.0d0 + a*a + b*b) / (2.0d0*(b*b + 1.0d0)*u2)
         end if
 
-        if (abs(g1) < 1.0d-22) then
-            if (abs(a) < 1.0d-24) then
-                g1 = 1.0d-22
+        if (abs(g1) < 1.0d-12) then
+            if (abs(a) < 1.0d-14) then
+                g1 = 1.0d-12
             end if
         end if
-        if (abs(g2) < 1.0d-22) then
-            if (abs(a) < 1.0d-24) then
-                g2 = 1.0d-22
+        if (abs(g2) < 1.0d-12) then
+            if (abs(a) < 1.0d-14) then
+                g2 = 1.0d-12
             end if
         end if
                 
@@ -449,16 +444,16 @@ contains
 
     function I4_plus(alpha, gamma, q2, prefac, t1, t2) result(ans)
         implicit none
-        double precision alpha, gamma, q, q2, prefac, t1, t2, g1, g2, ans
+        double precision alpha, gamma, q, q2, prefac, t1, t2, g1, g2
         q = sqrt(q2)
         g1 = sqrt(gamma*t1*t1 + alpha)
         g2 = sqrt(gamma*t2*t2 + alpha)
 
-        if (t1 > 1.0d25 .or. t2 > 1.0d25) then
-            if (t2 < 1.0d25) then
+        if (t1 > 1.0d15 .or. t2 > 1.0d15) then
+            if (t2 < 1.0d15) then
                 ans = (prefac*1.0d0/q*(atan(g2/q) - pi/2.0d0))
                 return
-            else if (t1 < 1.0d25) then
+            else if (t1 < 1.0d15) then
                 ans = (prefac*1.0d0/q*(pi/2.0d0 - atan(g1/q)))
                 return
             else
@@ -474,32 +469,32 @@ contains
     recursive function I4(a, b, u1, u2) result(ans)
         implicit none
         double precision a, b, u1, u2, alpha, gamma, q2, prefac, t1, t2, sign, ans
-        if (abs(u1 - b/a) < 1.0d-24) then
+        if (abs(u1 - b/a) < 1.0d-14) then
             if (u2 > b/a) then
-                ans = I4(a, b, u1 + 1.0d-24, u2)
+                ans = I4(a, b, u1 + 1.0d-14, u2)
                 return
             else
-                ans = I4(a, b, u1 - 1.0d-24, u2)
+                ans = I4(a, b, u1 - 1.0d-14, u2)
                 return
             end if
         end if
 
-        if (abs(u2 - b/a) < 1.0d-24) then
+        if (abs(u2 - b/a) < 1.0d-14) then
             if (u1 > b/a) then
-                ans = I4(a, b, u1, u2 + 1.0d-24)
+                ans = I4(a, b, u1, u2 + 1.0d-14)
                 return
             else
-                ans = I4(a, b, u1, u2 - 1.0d-24)
+                ans = I4(a, b, u1, u2 - 1.0d-14)
                 return
             end if
         end if
         
-        if (abs(a) < 1.0d-24) then
+        if (abs(a) < 1.0d-14) then
             if (a > 0.0d0) then
-                ans = I4(a + 1.0d-24, b, u1, u2)
+                ans = I4(a + 1.0d-14, b, u1, u2)
                 return
             else
-                ans = I4(a - 1.0d-24, b, u1, u2)
+                ans = I4(a - 1.0d-14, b, u1, u2)
                 return
             end if
         end if
@@ -511,12 +506,12 @@ contains
         if (a*u1 /= b) then
             t1 = (b*u1 + a)/(a*u1 - b)
         else
-            t1 = 1.0d25
+            t1 = 1.0d15
         end if
         if (a*u2 /= b) then
             t2 = (b*u2 + a)/(a*u2 - b)
         else
-            t2 = 1.0d25
+            t2 = 1.0d15
         end if
 
         sign = 1.0d0
@@ -532,7 +527,7 @@ contains
         end if
 
         if (((u1<b/a) .and. (b/a<u2)) .or. ((u2<b/a) .and. (b/a<u1))) then
-            ans = sign * (I4_plus(alpha, gamma, q2, prefac, t1, 1.0d26) + I4_plus(alpha, gamma, q2, prefac, t2, 1.0d26))
+            ans = sign * (I4_plus(alpha, gamma, q2, prefac, t1, 1.0d16) + I4_plus(alpha, gamma, q2, prefac, t2, 1.0d16))
             return
         else
             ans = sign * I4_plus(alpha, gamma, q2, prefac, t1, t2)
@@ -542,14 +537,14 @@ contains
 
     function I1(a, b, u1, u2) result(ans)
         implicit none
-        double precision a, b, u1, u2, ans
+        double precision a, b, u1, u2
         ans = F1(a, b, u2) - F1(a, b, u1) + I3(a, b, u1, u2) - I4(a, b, u1, u2)
     end function
 
     function I6(x, u1, u2) result(ans)
         implicit none
-        double precision x, u1, u2, ans
-        if (abs(x) < 1.0d-25) then
+        double precision x, u1, u2
+        if (abs(x) < 1.0d-15) then
             ans = 0.0d0
             return
         end if
@@ -559,16 +554,16 @@ contains
 
     function I7(x, u1, u2) result(ans)
         implicit none
-        double precision x, u1, u2, t1, t2, g1, g2, ans
-        if (abs(u1) > 1.0d-26) then
+        double precision x, u1, u2, t1, t2, g1, g2
+        if (abs(u1) > 1.0d-16) then
             t1 = 1.0d0/u1
         else
-            t1 = 1.0d26
+            t1 = 1.0d16
         end if
-        if (abs(u2) > 1.0d-26) then
+        if (abs(u2) > 1.0d-16) then
             t2 = 1.0d0/u2
         else
-            t2 = 1.0d26
+            t2 = 1.0d16
         end if
 
         g1 = sqrt(1.0d0 + t1*t1*(1.0d0 + x*x))
@@ -579,7 +574,7 @@ contains
 
     function I2(x, u1, u2) result(ans)
         implicit none
-        double precision x, u1, u2, ans
+        double precision x, u1, u2
         if (((u1<0.0d0) .and. (0.0d0<u2)) .or. ((u2<0.0d0) .and. (0.0d0<u1))) then
             if (u1 <= 0.0d0) then
                 ans = (F1(x, 0.0d0, u2) - F1(x, 0.0d0, u1)) + I6(x, u1, u2) + I7(x, 0.0d0, abs(u1)) + I7(x, 0.0d0, abs(u2))
@@ -593,7 +588,7 @@ contains
         end if
     end function
 
-    function p_calc_o(tri) result(ans)
+    function p_calc_o(triangle) result(ans)
         !
         !
         ! 三角形要素が自身の内心に作る電位の電位係数
@@ -610,18 +605,16 @@ contains
         !
         !
         implicit none
-        double precision tri_coord(3,3), a(3), b(3), c(3), ab(3), ac(3), ba(3), bc(3), ca(3), cb(3),&
-                        & theta_a, theta_b, theta_c, ans
-        type(Triangle) tri
-        tri_coord = tri%coord
-        a = tri_coord(1,:); b = tri_coord(2,:); c = tri_coord(3,:)
+        double precision triangle(3,3), a(3), b(3), c(3), ab(3), ac(3), ba(3), bc(3), ca(3), cb(3),&
+                        & theta_a, theta_b, theta_c
+        a = triangle(1,:); b = triangle(2,:); c = triangle(3,:)
         ab = b-a; ac = c-a; ba = a-b; bc = c-b; ca = a-c; cb = b-c
         theta_a = acos(sum(ab*ac)/(distance(a,b)*distance(a,c)))
         theta_b = acos(sum(bc*ba)/(distance(b,c)*distance(b,a)))
         theta_c = acos(sum(ca*cb)/(distance(c,a)*distance(c,b)))
-        ans = 2.0d0*(area_tri(tri)*log(((1.0d0+cos(theta_a/2.0d0))*(1.0d0+cos(theta_b/2.0d0))*(1.0d0+cos(theta_c/2.0d0))/&
-            & ((1.0d0-cos(theta_a/2.0d0))*(1.0d0-cos(theta_b/2.0d0))*(1.0d0-cos(theta_c/2.0d0))))))/&
-            & (distance(a,b)+distance(b,c)+distance(c,a))
+        ans = 2.0*(area_tri(triangle)*log10(((1.0+cos(theta_a/2.0))*(1.0+cos(theta_b/2.0))*(1+cos(theta_c/2.0))/&
+                & ((1.0-cos(theta_a/2.0))*(1.0-cos(theta_b/2.0))*(1.0-cos(theta_c/2.0))))))/&
+                & (distance(a,b)+distance(b,c)+distance(c,a))
     end function
 
     function potential_tri(r, tris, sigmas) result(ans)
@@ -645,7 +638,7 @@ contains
         !
         !
         implicit none
-        double precision r(3), sigmas(:), ans
+        double precision r(1,3), sigmas(:)
         integer i
         type(Triangle) tris(:), tri
         ans = 0.0d0
@@ -656,7 +649,7 @@ contains
         ans = ans - sum(E0*r)
     end function
 
-    function potential_elem_tri(tri, r, sigma) result(ans)
+    function potential_elem_tri(tri, r, sigma)
         !
         !
         ! 三角形要素triangleによってできる任意の点rでの電位を求める．
@@ -677,9 +670,9 @@ contains
         ! 
         !
         implicit none
-        double precision r(3), sigma, ans
+        double precision r(3), sigma
         type(Triangle) tri
-        ans = (p_calc_tri(tri, r)*sigma)/(4.0d0*pi*eps0)
+        potential_elem_tri = (p_calc_tri(tri, r)*sigma)/(4.0d0*pi*eps0)
     end function
 
     ! function cross_product(a,b)
@@ -699,15 +692,13 @@ contains
         ans = a*b
     end function
 
-    function area_tri(tri) result(ans)
+    function area_tri(triangle) result(area)
         implicit none
-        double precision tri_coord(3,3), ans, a(3), b(3), o(3)
-        type(Triangle) tri
-        tri_coord = tri%coord
+        double precision triangle(3,3), area, a(3), b(3), o(3)
         o = [0.0d0, 0.0d0, 0.0d0]
-        a = tri_coord(2,:) - tri_coord(1,:)
-        b = tri_coord(3,:) - tri_coord(1,:)
-        ans = 0.5*sqrt((distance(a,o)**2)*(distance(b,o)**2) - sum(a*b)**2)
+        a = triangle(2,:) - triangle(1,:)
+        b = triangle(3,:) - triangle(1,:)
+        area = 0.5*sqrt((distance(a,o)**2)*(distance(b,o)**2) - sum(a*b)**2)
     end function
 
 end program main
