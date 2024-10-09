@@ -144,9 +144,17 @@ contains
     function centroid_rectangle(rect) result(centroid)
         !
         !
-        ! 四角形の中心を求める
-        ! rect      : 四角形の型
-        ! centorid  : 四角形の中心
+        ! calculate the centroid of rectangle
+        !
+        !
+        ! Inputs
+        ! -----------
+        ! rect      : type of rectangle
+        ! centorid  : centroid
+        ! 
+        ! Returns
+        ! -----------
+        ! centrooid : centroid of triangle
         !
         !
         implicit none
@@ -163,17 +171,15 @@ contains
     function centroid_triangle(tri) result(centroid)
         !
         !
-        ! 三角形の内心を求める．
+        ! calculate centroid of triangle
         !
-        ! Parameters
+        ! Inputs
         ! -----------
-        ! triangle : [3,3]の実数配列でそれぞれの行に頂点が保存される
-        !            三角形の座標
+        ! tri       : type of triangle
         !
         ! Returns
         ! -----------
-        ! incenter : [1,3]の実数配列
-        !            三角形の内心
+        ! centroid  : centroid of triangle
         !
         !
         implicit none
@@ -189,8 +195,17 @@ contains
     function distance(a, b) result(dist)
         !
         !
-        ! 2点間 a,b の距離を求める．
+        ! calculate the distance of a and b
         !
+        ! Inputs
+        ! -----------
+        ! a     : 
+        ! b     :
+        ! 
+        ! Returns
+        ! -----------
+        ! dist  :
+        ! 
         !
         implicit none
         double precision a(3), b(3), dist
